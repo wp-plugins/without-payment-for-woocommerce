@@ -20,7 +20,7 @@ Payment gateway woocommeerce, without charge or obligation. Payment for the good
 
 
 == Installation ==
-1. Убедитесь что у вас установлена посленяя версия плагина [WooCommerce](/www.woothemes.com/woocommerce)
+1. Убедитесь что у вас установлена посленяя версия плагина [WooCommerce](http://www.woothemes.com/woocommerce)
 2. Распакуйте архив и загрузите "without-payment-woocommerce" в папку ваш-домен/wp-content/plugins
 3. Активируйте плагин
 
