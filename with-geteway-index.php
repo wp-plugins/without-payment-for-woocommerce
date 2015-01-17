@@ -1,14 +1,14 @@
 <?php
 /*
   Plugin Name: Without payment woocommerce
-  Plugin URI: http://www.zixn.ru/interkassa-gateway-woocommerce.html
+  Plugin URI: http://www.zixn.ru/plagin-payment-woocommerce.html
   Description: Платёжный шлюз woocommeerce, без оплаты и обязательств. Оплата товара только после звонка менеджера магазина.
-  Version: 1.0
+  Version: 1.1
   Author: Djon
   Author URI: http://zixn.ru
  */
 
-/*  Copyright 2014  Djon  (email: Ermak_not@mail.ru)
+/*  Copyright 2014  Djon  (email: izm@zixn.ru)
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ function init_without_shluz() {
 // Сохранение настроек
             add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
 // Payment listener/API hook
-           // add_action('woocommerce_api_wc_' . $this->id, array($this, 'check_ipn_response'));
+            // add_action('woocommerce_api_wc_' . $this->id, array($this, 'check_ipn_response'));
             if (!$this->is_valid_for_use()) {
                 $this->enabled = false;
             }
@@ -130,6 +130,12 @@ function init_without_shluz() {
                     'type' => 'select',
                     'options' => $this->get_pages('Выберите страницу...'),
                     'description' => "На эту страницу покупатель попадёт после подтверждения заказа, вашу страницу можно оформить по вашему вкусу"
+                ),
+                'without_сonfirm' => array(
+                    'title' => __('Отключить подтверждение', 'woocommerce'),
+                    'type' => 'checkbox',
+                    'label' => __('Отключить страницу подтверждения заказа. В случае если галка установлена - после выбора оплаты по данному способу, покупатель сразу будет попадать на страницу выбранную вами в опции "Страница перенаправления"', 'woocommerce'),
+                    'default' => 'no'
                 ),
                 'debug' => array(
                     'title' => __('Режим логирования', 'woocommerce'),
@@ -214,13 +220,21 @@ function init_without_shluz() {
          * Страница подтверждения заказ
          * */
         function receipt_page($order) {
-            echo '<p>' . __('Спасибо за заказ, для подтверждения заказа - нажмите на кнопку ниже!', 'woocommerce') . '</p>';
-
-            echo $this->generate_form($order); //Кнопки и прочее
-            if (isset($_POST['without_pay'])) {
+            if ($this->settings['without_сonfirm'] == 'yes') { //Если галка установлена, пропускаем страницу подтверждения заказа
                 wc_empty_cart();
                 $action_adr = get_permalink($this->settings['without_succes']);
                 wp_redirect($action_adr);
+            } else {
+
+                echo '<p>' . __('Спасибо за заказ, для подтверждения заказа - нажмите на кнопку ниже!', 'woocommerce') . '</p>';
+
+                echo $this->generate_form($order); //Кнопки и прочее
+
+                if (isset($_POST['without_pay'])) {
+                    wc_empty_cart();
+                    $action_adr = get_permalink($this->settings['without_succes']);
+                    wp_redirect($action_adr);
+                }
             }
         }
 
@@ -236,7 +250,6 @@ function init_without_shluz() {
 //            }
 //
 //        }
-
 // Получает страницы сайта
         function get_pages($title = false, $indent = true) {
             $wp_pages = get_pages('sort_column=menu_order');
