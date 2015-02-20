@@ -33,6 +33,9 @@ Payment gateway woocommeerce, without charge or obligation. Payment for the good
 
 
 == Changelog ==
+= 1.2 =
+* Теперь нет проверки валюты магазина
+* У всех созданных заказов статус «В обработке»
 = 1.1 =
 * Добавлены дополнительные опции
 = 1.0 =

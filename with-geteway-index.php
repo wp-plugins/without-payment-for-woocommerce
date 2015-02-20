@@ -3,12 +3,12 @@
   Plugin Name: Without payment woocommerce
   Plugin URI: http://www.zixn.ru/plagin-payment-woocommerce.html
   Description: Платёжный шлюз woocommeerce, без оплаты и обязательств. Оплата товара только после звонка менеджера магазина.
-  Version: 1.1
+  Version: 1.2
   Author: Djon
   Author URI: http://zixn.ru
  */
 
-/*  Copyright 2014  Djon  (email: izm@zixn.ru)
+/*  Copyright 2015  Djon  (email: izm@zixn.ru)
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -61,25 +61,13 @@ function init_without_shluz() {
             }
 
 // Actions
+//// Payment listener/API hook
+//            add_action('woocommerce_api_wc_' . $this->id, array($this, 'check_ipn_response'));
+// 
 //Подтверждалка заказа
             add_action('woocommerce_receipt_' . $this->id, array($this, 'receipt_page')); // Подтверждение заказа
 // Сохранение настроек
             add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
-// Payment listener/API hook
-            // add_action('woocommerce_api_wc_' . $this->id, array($this, 'check_ipn_response'));
-            if (!$this->is_valid_for_use()) {
-                $this->enabled = false;
-            }
-        }
-
-        /**
-         * Проверка прав пользователя
-         */
-        function is_valid_for_use() {
-            if (!in_array(get_option('woocommerce_currency'), array('RUB'))) {
-                return false;
-            }
-            return true;
         }
 
         /**
@@ -89,21 +77,15 @@ function init_without_shluz() {
             ?>
             <h3><?php _e('WithOut', 'woocommerce'); ?></h3>
             <p><?php _e('Настройка приема электронных платежей через "Без оплаты".', 'woocommerce'); ?></p>
+            <table class="form-table">
 
-            <?php if ($this->is_valid_for_use()) : ?>
+                <?php
+                // Генерация HTML настроек на основе заданных параметров
+                $this->generate_settings_html();
+                ?>
+            </table><!--/.form-table-->
 
-                <table class="form-table">
-
-                    <?php
-                    // Генерация HTML настроек на основе заданных параметров
-                    $this->generate_settings_html();
-                    ?>
-                </table><!--/.form-table-->
-
-            <?php else : ?>
-                <div class="inline error"><p><strong><?php _e('Шлюз отключен', 'woocommerce'); ?></strong>: <?php _e('WithOut не поддерживает валюты Вашего магазина.', 'woocommerce'); ?></p></div>
             <?php
-            endif;
         }
 
 // End admin_options()
@@ -190,7 +172,8 @@ function init_without_shluz() {
                 'phone' => $order->billing_phone,
                 'surl' => $action_adr,
                 'furl' => $action_adr,
-                'curl' => $action_adr
+                'curl' => $action_adr,
+                'InvId' => $order_id, //ID заказа
             );
             $payu_args_array = array();
             foreach ($payu_args as $key => $value) {
@@ -219,37 +202,41 @@ function init_without_shluz() {
         /**
          * Страница подтверждения заказ
          * */
-        function receipt_page($order) {
+        function receipt_page($order_id) {
+            $order = new WC_Order($order_id);
             if ($this->settings['without_сonfirm'] == 'yes') { //Если галка установлена, пропускаем страницу подтверждения заказа
-                wc_empty_cart();
+                wc_empty_cart($order_id);
                 $action_adr = get_permalink($this->settings['without_succes']);
+                $this->updateStatus($order_id);
                 wp_redirect($action_adr);
             } else {
-
                 echo '<p>' . __('Спасибо за заказ, для подтверждения заказа - нажмите на кнопку ниже!', 'woocommerce') . '</p>';
-
-                echo $this->generate_form($order); //Кнопки и прочее
+                echo $this->generate_form($order_id); //Кнопки и прочее
 
                 if (isset($_POST['without_pay'])) {
                     wc_empty_cart();
                     $action_adr = get_permalink($this->settings['without_succes']);
+                    $this->updateStatus();
                     wp_redirect($action_adr);
                 }
             }
         }
 
         /**
-         * Check Response
+         * Изменение статуса заказа
          * */
-//        function check_ipn_response() {
-//            global $woocommerce;
-//            if (isset($_POST['without_pay'])) {
-//                wc_empty_cart();
-//                $action_adr = "http://mail.ru";
-//                wp_redirect($action_adr);
-//            }
-//
-//        }
+        function updateStatus($order_id = null) {
+            global $woocommerce;
+            if (!empty($_POST['InvId'])) {
+                $inv_id = $_POST['InvId'];
+            } else {
+
+                $inv_id = $order_id;
+            }
+            $order = new WC_Order($inv_id);
+            $order->update_status('processing', __('Платеж успешно оплачен', 'woocommerce'));
+        }
+
 // Получает страницы сайта
         function get_pages($title = false, $indent = true) {
             $wp_pages = get_pages('sort_column=menu_order');
