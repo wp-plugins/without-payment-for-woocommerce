@@ -3,7 +3,7 @@
   Plugin Name: Without payment woocommerce
   Plugin URI: http://www.zixn.ru/plagin-payment-woocommerce.html
   Description: Платёжный шлюз woocommeerce, без оплаты и обязательств. Оплата товара только после звонка менеджера магазина.
-  Version: 1.2
+  Version: 1.2.1
   Author: Djon
   Author URI: http://zixn.ru
  */
@@ -204,17 +204,19 @@ function init_without_shluz() {
          * */
         function receipt_page($order_id) {
             $order = new WC_Order($order_id);
+            global $woocommerce;
+
+
             if ($this->settings['without_сonfirm'] == 'yes') { //Если галка установлена, пропускаем страницу подтверждения заказа
-                wc_empty_cart($order_id);
+                $woocommerce->cart->empty_cart();
                 $action_adr = get_permalink($this->settings['without_succes']);
                 $this->updateStatus($order_id);
                 wp_redirect($action_adr);
             } else {
                 echo '<p>' . __('Спасибо за заказ, для подтверждения заказа - нажмите на кнопку ниже!', 'woocommerce') . '</p>';
                 echo $this->generate_form($order_id); //Кнопки и прочее
-
                 if (isset($_POST['without_pay'])) {
-                    wc_empty_cart();
+                    $woocommerce->cart->empty_cart();
                     $action_adr = get_permalink($this->settings['without_succes']);
                     $this->updateStatus();
                     wp_redirect($action_adr);

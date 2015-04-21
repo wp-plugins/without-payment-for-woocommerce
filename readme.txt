@@ -33,6 +33,8 @@ Payment gateway woocommeerce, without charge or obligation. Payment for the good
 
 
 == Changelog ==
+= 1.2.1 =
+* fix empty cart order
 = 1.2 =
 * Теперь нет проверки валюты магазина
 * У всех созданных заказов статус «В обработке»
